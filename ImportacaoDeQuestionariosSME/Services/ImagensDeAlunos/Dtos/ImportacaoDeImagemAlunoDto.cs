@@ -9,7 +9,7 @@ namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos.Dtos
         {
         }
 
-        public string CaminhoDaPlanilha { get; set; }
+        public string CaminhoDaDoArquivo { get; set; }
         public string Ano { get; set; }
     }
 }

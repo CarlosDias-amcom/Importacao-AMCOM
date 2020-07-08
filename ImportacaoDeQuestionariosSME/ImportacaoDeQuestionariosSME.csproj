@@ -188,6 +188,7 @@
     <Compile Include="Services\FatoresAssociados\IFatorAssociadoServices.cs" />
     <Compile Include="Services\ImagensDeAlunos\Dtos\ImportacaoDeImagemAlunoDto.cs" />
     <Compile Include="Services\ImagensDeAlunos\IImagemAlunoServices.cs" />
+    <Compile Include="Services\ImagensDeAlunos\ImagemAlunoAccessServices.cs" />
     <Compile Include="Services\ImagensDeAlunos\ImagemAlunoServices.cs" />
     <Compile Include="StartupForm.cs">
       <SubType>Form</SubType>

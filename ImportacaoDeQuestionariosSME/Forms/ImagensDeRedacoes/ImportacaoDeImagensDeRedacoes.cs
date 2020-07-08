@@ -18,7 +18,7 @@ namespace ImportacaoDeQuestionariosSME.Forms.ImagensDeRedacoes
 
         public ImportacaoDeImagensDeRedacoes()
         {
-            _imagemAlunoServices = new ImagemAlunoServices();
+            _imagemAlunoServices = new ImagemAlunoAccessServices();
             InitializeComponent();
         }
 
@@ -29,10 +29,8 @@ namespace ImportacaoDeQuestionariosSME.Forms.ImagensDeRedacoes
             var dto = new ImportacaoDeImagemAlunoDto
             {
                 Ano = txtAno.Text,
-                CaminhoDaPlanilha = txtArquivo.Text
+                CaminhoDaDoArquivo = txtArquivo.Text
             };
-
-            MessageBox.Show(txtArquivo.Text);
 
             await _imagemAlunoServices.ImportarAsync(dto);
 
@@ -51,9 +49,9 @@ namespace ImportacaoDeQuestionariosSME.Forms.ImagensDeRedacoes
             dialog.ShowDialog();
 
             if (string.IsNullOrWhiteSpace(dialog.FileName)) return;
-            if (!dialog.FileName.EndsWith(".csv"))
+            if (!dialog.FileName.EndsWith(".csv") && !dialog.FileName.EndsWith(".accdb"))
             {
-                MessageBox.Show("Selecione um arquivo tipo CSV.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Selecione um arquivo tipo CSV ou Access.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 

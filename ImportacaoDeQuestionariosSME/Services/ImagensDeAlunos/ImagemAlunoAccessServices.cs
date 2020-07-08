@@ -1,21 +1,21 @@
 ﻿using ImportacaoDeQuestionariosSME.Data.Repositories.ImagensAlunos;
-using ImportacaoDeQuestionariosSME.Domain.Abstractions;
 using ImportacaoDeQuestionariosSME.Domain.ImagensAlunos;
 using ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos.Dtos;
-using ImportacaoDeQuestionariosSME.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.OleDb;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos
 {
-    public class ImagemAlunoServices : IImagemAlunoServices
+    public class ImagemAlunoAccessServices : IImagemAlunoServices
     {
         private readonly IImagemAlunoRepository _imagemAlunoRepository;
 
-        public ImagemAlunoServices()
+        public ImagemAlunoAccessServices()
         {
             _imagemAlunoRepository = new ImagemAlunoRepository();
         }
@@ -31,7 +31,8 @@ namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos
 
             try
             {
-                var dtImagens = CsvManager.GetCsvFile(dto.CaminhoDaDoArquivo);
+                var connection = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={dto.CaminhoDaDoArquivo}";
+                var dtImagens = GetImagensAlunoFromAccess(connection);
                 if (dtImagens.Rows.Count <= 0)
                 {
                     dto.AddErro("Não existem regitros na planilha para exportação.");
@@ -44,12 +45,12 @@ namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos
                     {
                         AluMatricula = row["CD_ALUNO_SME"].ToString(),
                         AluNome = row["NOME"].ToString(),
-                        AreaConhecimentoId = 4,
+                        AreaConhecimentoId = GetAreaDeConhecimentoId(row["DISCIPLINA"].ToString()),
                         Caminho = FormatCaminhoDaImagem(row["IMAGEM"].ToString()),
                         Edicao = dto.Ano,
                         EscCodigo = row["CD_UNIDADE_EDUCACAO"].ToString(),
                         Pagina = int.Parse(row["PAGINA"].ToString()),
-                        Questao = "Redação"
+                        Questao = row["QUESTAO"].ToString()
                     })
                     .ToList();
 
@@ -63,9 +64,41 @@ namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos
             }
         }
 
+        private string GetQuestao(string disciplina)
+        {
+            switch (disciplina)
+            {
+                case "MT":
+                    return "Matemática";
+                case "LP":
+                    return "Língua Portuguesa";
+                case "CI":
+                    return "Ciências da Natureza";
+                default:
+                    return "Redação";
+            }
+        }
+
+        private DataTable GetImagensAlunoFromAccess(string connString)
+        {
+            var query = @"SELECT CadernosRed.INSC, CadernosRed.CD_ALUNO_SME, CadernosRed.NOME, CadernosRed.CD_UNIDADE_EDUCACAO, CadernosRed.QUESTAO, CadernosRed.PAGINA, CadernosRed.DISCIPLINA, CadernosRed.IMAGEM
+                        FROM CadernosRed
+                        WHERE CadernosRed.CD_ALUNO_SME <>''
+                        AND CadernosRed.QUESTAO <> ''
+                        AND CadernosRed.DISCIPLINA = 'MT'";
+
+            var dAdapter = new OleDbDataAdapter(query, connString);
+            var dTable = new DataTable();
+            var cBuilder = new OleDbCommandBuilder(dAdapter);
+            cBuilder.QuotePrefix = "[";
+            cBuilder.QuoteSuffix = "]";
+            dAdapter.Fill(dTable);
+            return dTable;
+        }
+
         private static int GetAreaDeConhecimentoId(string disciplina)
         {
-            switch(disciplina)
+            switch (disciplina)
             {
                 case "MT":
                     return 3;
@@ -94,6 +127,8 @@ namespace ImportacaoDeQuestionariosSME.Services.ImagensDeAlunos
                 .GroupBy(x => new { x.AluMatricula, x.Questao, x.Pagina })
                 .Where(x => x.Count() > 1)
                 .ToList();
+
+            if (!duplicates.Any()) return;
 
             foreach (var grouping in duplicates)
                 foreach (var entity in grouping)
